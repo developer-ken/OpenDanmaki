@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDanmaki", "OpenDanmaki\OpenDanmaki.csproj", "{FA82FF78-5144-4347-ADC2-2F3127730F00}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenDanmaki", "OpenDanmaki\OpenDanmaki.csproj", "{FA82FF78-5144-4347-ADC2-2F3127730F00}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDanmaki.Cli", "OpenDanmaki.Cli\OpenDanmaki.Cli.csproj", "{048E1499-5B63-42B4-9D80-CB8CFAEC39F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenDanmaki.Cli", "OpenDanmaki.Cli\OpenDanmaki.Cli.csproj", "{048E1499-5B63-42B4-9D80-CB8CFAEC39F3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BiliApi", "BiliApi.Net\BiliApi.csproj", "{35B66EA0-7080-411D-A09B-341631E67DCF}"
 EndProject

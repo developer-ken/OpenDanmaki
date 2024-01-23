@@ -11,4 +11,10 @@
     <ProjectReference Include="..\OpenDanmaki\OpenDanmaki.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="app.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

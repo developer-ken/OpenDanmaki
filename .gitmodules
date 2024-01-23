@@ -1,0 +1,6 @@
+[submodule "BiliApi.Net"]
+	path = BiliApi.Net
+	url = https://github.com/developer-ken/BiliApi.Net.git
+[submodule "BiliveDanmakuAgent"]
+	path = BiliveDanmakuAgent
+	url = https://github.com/developer-ken/BiliveDanmakuAgent.git

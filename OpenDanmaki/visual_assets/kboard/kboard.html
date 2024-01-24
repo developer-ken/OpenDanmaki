@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <META http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>OpenDanmaki - Capture This Page</title>
+    <style>
+        .pinned-chat-container {
+            border: none;
+            padding: 0px;
+            margin: 0px;
+            background-color: transparent;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE 10+ */
+        }
+
+        .flex-container {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+        }
+
+        .normal-chat-container {
+            flex-grow: 1;
+            overflow: scroll;
+            border: none;
+            background-color: transparent;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE 10+ */
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 0px;
+            /* WebKit */
+        }
+
+        .normal-chat-container::-webkit-scrollbar {
+            width: 0px;
+            /* WebKit */
+        }
+
+        .chat-message * {
+            vertical-align: top;
+        }
+
+        .chat-message {
+            display: flex;
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        .pinned-message {
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            animation: fadeIn 0.1s forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .chat-message img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+
+        .chat-bubble {
+            margin-left: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #f0f0f0;
+        }
+
+        .chat-bubble-paid {
+            margin-left: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: chocolate;
+        }
+
+        .chat-name {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body style="background-color: transparent">
+    <div class="flex-container" id="overallContainer">
+        <div class="pinned-chat-container" id="pinnedchatContainer">
+        </div>
+        <div class="normal-chat-container" id="chatContainer">
+            <!-- Chat messages will be added here -->
+        </div>
+    </div>
+
+    <script>
+        var chatContainer = document.getElementById('chatContainer');
+        var pinnedMessage = null;
+        var pinnedMessageTimeout = null;
+        var pinnedMessageInterval = null;
+        var pinnedMessageListener = null;
+
+        chatContainer.addEventListener('scroll', function () {
+            Array.from(chatContainer.children).forEach(function (message) {
+                var rect = message.getBoundingClientRect();
+                if (rect.bottom < chatContainer.getBoundingClientRect().top) {
+                    if (pinnedMessage && pinnedMessage.element == message) {
+                        // If the pinned message is scrolled out of view, remove it
+                        clearTimeout(pinnedMessageTimeout);
+                        clearInterval(pinnedMessageInterval);
+                        chatContainer.removeEventListener('scroll', pinnedMessageListener);
+                        pinnedMessage = null;
+                    }
+                    chatContainer.removeChild(message);
+                }
+            });
+        });
+
+        function addMessage(username, messagetxt, avatar, medals = null, bubble_style = 'chat-bubble') {
+            var message = document.createElement('div');
+            message.className = 'chat-message';
+
+            var img = document.createElement('img');
+            img.src = avatar; // Replace with actual avatar URL
+
+            var bubble = document.createElement('div');
+            bubble.className = bubble_style;
+
+            var name = document.createElement('div');
+            name.className = 'chat-name';
+            name.textContent = username; // Replace with actual user name
+
+            // Add medals if they exist
+            if (medals !== null) {
+                medals.forEach(function (medal) {
+                    var medal_url = medal;
+                    var medalImg = document.createElement('img');
+                    medalImg.src = medal_url;
+                    medalImg.style.width = '1.5em'; // Set the size to match the text size
+                    medalImg.style.height = '1.5em';
+                    name.insertBefore(medalImg, name.firstChild);
+                });
+            }
+
+            var text = document.createElement('div');
+
+            text.innerHTML = messagetxt.toString().replace(/\[img:(.*?)\]/g, function (match, url) {
+                return '<img src="' + url + '" style="width: 1.5em; height: 1.5em;">';
+            }); // Replace [url] with img element
+
+            bubble.appendChild(name);
+            bubble.appendChild(text);
+
+            message.appendChild(img);
+            message.appendChild(bubble);
+
+            chatContainer.appendChild(message);
+
+            // Scroll to bottom with animation
+            message.scrollIntoView({ behavior: 'smooth' });
+            return message;
+        }
+
+        function addPinnedMessage(username, messagetxt, avatar, medals = null, priority) {
+            var message = addMessage(username, messagetxt, avatar, medals, 'chat-bubble-paid');
+            var listener = function () {
+                var rect = message.getBoundingClientRect();
+                if (rect.top < chatContainer.getBoundingClientRect().top && (!pinnedMessage || pinnedMessage.priority < priority)) {
+                    // If there is a pinned message and its priority is less than the new message
+                    if (pinnedMessage) {
+                        // Remove the old pinned message
+                        clearTimeout(pinnedMessageTimeout);
+                        clearInterval(pinnedMessageInterval);
+                        chatContainer.removeEventListener('scroll', pinnedMessageListener);
+                        pinnedMessage.element.style.position = '';
+                        pinnedMessage.element.remove();
+                    }
+
+                    // Pin the new message
+                    message.classList.add('pinned-message');
+                    pinnedMessage = { element: message, priority: priority };
+                    //chatContainer.removeChild(message);
+                    pinnedchatContainer.appendChild(message);
+                    // Set a timeout to remove the pinned message after the priority time
+                    pinnedMessageTimeout = setTimeout(function () {
+                        message.classList.remove('pinned-message');
+                        pinnedMessage = null;
+                        chatContainer.removeEventListener('scroll', listener);
+                    }, priority * 1000);
+
+                    // Set an interval to decrease the priority of the pinned message over time
+                    pinnedMessageInterval = setInterval(function () {
+                        pinnedMessage.priority -= 0.1;
+                    }, 100);
+
+                    pinnedMessageListener = listener;
+                }
+            };
+            chatContainer.addEventListener('scroll', listener);
+        }
+
+        // window.setInterval(function () {
+        //     var pri = Math.random() * 100;
+        //     addPinnedMessage('Name', "表情[img:https://g.csdnimg.cn/static/face/emoji/010.png]测试 优先级" + pri, 'https://i2.hdslb.com/bfs/face/8e80dfc2cc59b1d3d6c48895666aa28b9dd323ae.jpg@150w_150h.jpg', ["Saab"], pri);
+        // }, 500)
+        // window.setInterval(function () {
+        //     addMessage('Name', "表情[img:https://g.csdnimg.cn/static/face/emoji/010.png]测试" + Math.random(), 'https://i2.hdslb.com/bfs/face/8e80dfc2cc59b1d3d6c48895666aa28b9dd323ae.jpg@150w_150h.jpg', ["Saab"]);
+        // }, 300)
+    </script>
+
+    <script>
+        var socket;
+
+        function connect() {
+            socket = new WebSocket('<<PLACEHOLDER_WEBSOCKET_URL>>');
+
+            socket.onmessage = function (event) {
+                var message = JSON.parse(event.data);
+
+                switch (message.type) {
+                    case 'normal':
+                        addMessage(message.name, message.content, message.avatar, message.tags);
+                        break;
+                    case 'pinned':
+                        addPinnedMessage(message.name, message.content, message.avatar, message.tags, message.priority);
+                        break;
+                }
+            };
+
+            socket.onclose = function (e) {
+                console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+                addMessage("系统消息", "与OpenDanmaki后端失联，正在努力恢复...", "/images/sysavartar.png", ["/images/sysbandage.png"]);
+                setTimeout(function () {
+                    connect();
+                }, 1000);
+            };
+
+            socket.onerror = function (err) {
+                console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+                addMessage("系统消息", "与OpenDanmaki后端失联，正在努力恢复...", "/images/sysavartar.png", ["/images/sysbandage.png"]);
+                setTimeout(function () {
+                    connect();
+                }, 1000);
+            };
+
+            socket.onopen = function (e) {
+                console.log('Socket connected');
+                addMessage("系统消息", "已连接OpenDanmaki", "/images/sysavartar.png", ["/images/sysbandage.png"]);
+            };
+        }
+
+        connect();
+    </script>
+</body>
+
+</html>

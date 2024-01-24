@@ -1,21 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.15" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="TouchSocket" Version="2.0.0-beta.267" />
-    <PackageReference Include="TouchSocket.Http" Version="2.0.0-beta.267" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="log4net" Version="2.0.15" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="TouchSocket" Version="2.0.0-beta.267" />
+		<PackageReference Include="TouchSocket.Http" Version="2.0.0-beta.267" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\BiliApi.Net\BiliApi.csproj" />
-    <ProjectReference Include="..\BiliveDanmakuAgent\BiliveDanmakuAgent.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\BiliApi.Net\BiliApi.csproj" />
+		<ProjectReference Include="..\BiliveDanmakuAgent\BiliveDanmakuAgent.csproj" />
+	</ItemGroup>
 
+	<ItemGroup>
+		<None Include="visual_assets\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="visual_assets\emoji\" />
+	</ItemGroup>
 </Project>

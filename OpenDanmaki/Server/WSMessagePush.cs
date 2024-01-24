@@ -1,5 +1,7 @@
 ﻿using BiliveDanmakuAgent.Model;
+using log4net;
 using Newtonsoft.Json.Linq;
+using OpenDanmaki.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +17,9 @@ namespace OpenDanmaki.Server
 {
     public class WSMessagePush
     {
+        private static readonly log4net.ILog log = LogManager.GetLogger(typeof(WSMessagePush));
         ResourcesServer Server;
+        public event Action<RawJsonEventArgs> MessagePrepush;
 
         public WSMessagePush(ResourcesServer server)
         {
@@ -28,7 +32,7 @@ namespace OpenDanmaki.Server
         /// <param name="danmaku">弹幕</param>
         /// <param name="priority">优先级(持续时间)</param>
         /// <param name="tags">标签</param>
-        public void PushStdMessage(Danmaku danmaku, int priority = 0, List<string> tags = null)
+        public async Task PushStdMessageAsync(Danmaku danmaku, int priority = 0, List<string> tags = null)
         {
             HttpHandler.avatar.AvatarPreheatAsync(danmaku.UserID, danmaku.AvatarUrl).Wait();
             EmojiProvider.LoadEmojiIfNotExists(danmaku);
@@ -56,7 +60,7 @@ namespace OpenDanmaki.Server
                 JArray jarr = new JArray();
                 foreach (var item in tags)
                 {
-                    jarr.Add("http://" + Server.Host + ":" + Server.Port + "/imageservice/tags/" + item);
+                    jarr.Add(item);
                 }
                 base_obj.Add("tags", jarr);
             }
@@ -73,17 +77,10 @@ namespace OpenDanmaki.Server
                 base_obj.Add("medal", medal);
             }
 
-            var socketClients = Server.service.GetClients();
-            foreach (var item in socketClients)
-            {
-                if (item.Protocol == Protocol.WebSocket)//先判断是不是websocket协议
-                {
-                    item.SendWithWS(base_obj.ToString(Newtonsoft.Json.Formatting.None));
-                }
-            }
+            await PushJsonToClientAsync(base_obj);
         }
 
-        public void PushGift(Danmaku danmaku, List<string> tags = null)
+        public async Task PushGiftAsync(Danmaku danmaku, List<string> tags = null)
         {
             JObject base_obj = new JObject();
             base_obj.Add("type", "gift");
@@ -103,7 +100,7 @@ namespace OpenDanmaki.Server
                 JArray jarr = new JArray();
                 foreach (var item in tags)
                 {
-                    jarr.Add("http://" + Server.Host + ":" + Server.Port + "/imageservice/tags/" + item);
+                    jarr.Add(item);
                 }
                 base_obj.Add("tags", jarr);
             }
@@ -119,14 +116,32 @@ namespace OpenDanmaki.Server
                 }
                 base_obj.Add("medal", medal);
             }
+            await PushJsonToClientAsync(base_obj);
+        }
 
+        public async Task PushJsonToClientAsync(JObject json)
+        {
+            var arg = new RawJsonEventArgs(json);
+            MessagePrepush?.Invoke(arg);
+            if (arg.Drop)
+            {
+                log.Info("Plugin dropped a message.");
+            }
+            int cntsent = 0;
             var socketClients = Server.service.GetClients();
             foreach (var item in socketClients)
             {
                 if (item.Protocol == Protocol.WebSocket)//先判断是不是websocket协议
                 {
-                    item.SendWithWS(base_obj.ToString(Newtonsoft.Json.Formatting.None));
+                    await item.SendWithWSAsync(json.ToString(Newtonsoft.Json.Formatting.None));
+                    cntsent++;
                 }
+            }
+            if(cntsent == 0)
+            {
+                log.Warn("No client connected! Message dropped.");
+                log.Warn("Check client connection.");
+                log.Warn("前端未运行或无法通信，请检查！");
             }
         }
 

@@ -15,14 +15,18 @@ namespace OpenDanmaki
 {
     public class OpenDanmaki
     {
+        public static OpenDanmaki instance;
+
         public ResourcesServer Server;
         public WSMessagePush WSMPush;
         public DanmakuApi BiliDanmaku;
+        public PluginLoader Pluginloader;
+        public TmpResourceProvider TmpResourceProvider;
 
         /// <summary>
         /// 在弹幕事件(包含sc、礼物等)接收后、被处理前触发
         /// </summary>
-        public event Action<Danmaku> DanmakuPreprocess;
+        public event Action<DanmakuEventArgs> DanmakuPreprocess;
 
         /// <summary>
         /// 弹幕礼物接收后、被处理前触发
@@ -44,13 +48,22 @@ namespace OpenDanmaki
         /// </summary>
         public event Action<DanmakuEventArgs> CommentPreprocess;
 
+        /// <summary>
+        /// 在一段Json发送到前端前触发
+        /// </summary>
+
+        public event Action<RawJsonEventArgs> MessagePrepush;
+
         private static readonly ILog logger = LogManager.GetLogger(typeof(OpenDanmaki));
 
         public OpenDanmaki(int liveroomid, string logincookie = "", string host = "localhost", int port = 9753)
         {
+            instance = this;
             Server = new ResourcesServer(host, port);
             WSMPush = new WSMessagePush(Server);
             BiliDanmaku = new DanmakuApi(liveroomid, logincookie);
+            Pluginloader = new PluginLoader(this);
+            TmpResourceProvider = new TmpResourceProvider("http://" + host + ":" + port + "/attachments/");
             BiliDanmaku.DanmakuMsgReceivedEvent += BiliDanmaku_DanmakuMsgReceivedEvent;
             BiliDanmaku.CommentReceived += BiliDanmaku_CommentReceived;
             BiliDanmaku.Superchat += BiliDanmaku_Superchat;
@@ -59,31 +72,48 @@ namespace OpenDanmaki
 
         private void BiliDanmaku_DanmakuMsgReceivedEvent(object sender, DanmakuReceivedEventArgs e)
         {
-            DanmakuPreprocess?.Invoke(e.Danmaku);
+            var args = new DanmakuEventArgs(e.Danmaku);
+            DanmakuPreprocess?.Invoke(args);
+            if (args.Drop) e.Danmaku.MsgType = DanmakuMsgType.Unknown; // Drop the message
         }
 
         private void BiliDanmaku_Gift(object sender, BiliveDanmakuAgent.Model.DanmakuReceivedEventArgs e)
         {
             var args = new DanmakuEventArgs(e.Danmaku);
             GiftPreprocess?.Invoke(args);
+            if (args.Drop)
+            {
+                logger.Debug("[DROP]" + e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [gift]" + e.Danmaku.GiftName + " x" + e.Danmaku.GiftCount);
+                return;
+            }
             logger.Debug(e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [gift]" + e.Danmaku.GiftName + " x" + e.Danmaku.GiftCount);
-            WSMPush.PushGift(args.DanmakuObj, args.BandageImgUrls);
+            WSMPush.PushGiftAsync(args.DanmakuObj, args.BandageImgUrls);
         }
 
         private void BiliDanmaku_Superchat(object sender, BiliveDanmakuAgent.Model.DanmakuReceivedEventArgs e)
         {
             var args = new DanmakuEventArgs(e.Danmaku);
             SuperchatPreprocess?.Invoke(args);
+            if (args.Drop)
+            {
+                logger.Debug("[DROP]" + e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [superchat]" + e.Danmaku.CommentText);
+                return;
+            }
             logger.Debug(e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [superchat]" + e.Danmaku.CommentText);
-            WSMPush.PushStdMessage(args.DanmakuObj, e.Danmaku.SCKeepTime, args.BandageImgUrls);
+            WSMPush.PushStdMessageAsync(args.DanmakuObj, e.Danmaku.SCKeepTime, args.BandageImgUrls);
         }
 
         private void BiliDanmaku_CommentReceived(object sender, BiliveDanmakuAgent.Model.DanmakuReceivedEventArgs e)
         {
             var args = new DanmakuEventArgs(e.Danmaku);
             CommentPreprocess?.Invoke(args);
+            if (args.Drop)
+            {
+                logger.Debug("[DROP]" + e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [chat]" + e.Danmaku.CommentText);
+                return;
+            }
             logger.Debug(e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [chat]" + e.Danmaku.CommentText);
-            WSMPush.PushStdMessage(args.DanmakuObj, e.Danmaku.SCKeepTime, args.BandageImgUrls);
+            WSMPush.PushStdMessageAsync(args.DanmakuObj, e.Danmaku.SCKeepTime, args.BandageImgUrls);
         }
 
         public async Task StartAsync()
@@ -92,6 +122,14 @@ namespace OpenDanmaki
             await BiliDanmaku.ConnectAsync();
             var ver = Assembly.GetExecutingAssembly().GetName().Version;
             logger.Info("OpenDanmaki " + ver.ToString() + " loaded.");
+            logger.Info("Start loading plugins...");
+            Directory.CreateDirectory("plugins");
+            Directory.GetFiles("plugins").ToList().ForEach(x =>
+            {
+                if (x.ToLower().EndsWith(".odp.dll"))
+                    Pluginloader.LoadPlugin(x);
+            });
+            logger.Info("Finished loading plugins.");
         }
     }
 }

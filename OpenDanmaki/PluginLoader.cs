@@ -16,9 +16,10 @@ namespace OpenDanmaki
 
         public List<IPlugin> Plugins { get; internal set; }
 
-        public PluginLoader()
+        public PluginLoader(OpenDanmaki odbase)
         {
             Plugins = new List<IPlugin>();
+            ODBase = odbase;
         }
 
         public void LoadPlugin(string path)
@@ -28,12 +29,13 @@ namespace OpenDanmaki
                 logger.Info("Loading assembly from file: " + path);
                 Assembly ass = Assembly.LoadFrom(path);
                 var wormMain = ass.GetTypes().FirstOrDefault(m => m.GetInterface(typeof(IPlugin).Name) != null);
+                ILog pluginlogger = LogManager.GetLogger(wormMain);
                 var tmpObj = (IPlugin)Activator.CreateInstance(wormMain);
                 try
                 {
                     logger.Info("Loading " + tmpObj.PluginName + " version " + tmpObj.Version.ToString()
                         + " by " + tmpObj.Author);
-                    tmpObj.OnPluginLoad(ODBase);
+                    tmpObj.OnPluginLoad(ODBase, pluginlogger);
                     Plugins.Add(tmpObj);
                 }
                 catch (Exception ex)

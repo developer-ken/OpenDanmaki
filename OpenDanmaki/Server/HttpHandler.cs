@@ -1,4 +1,5 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
@@ -11,11 +12,12 @@ namespace OpenDanmaki.Server
 {
     public class HttpHandler : PluginBase, IHttpPlugin<IHttpSocketClient>
     {
+        private static readonly log4net.ILog log = LogManager.GetLogger(typeof(HttpHandler));
         public static AvatarProvider avatar = new AvatarProvider();
         public async Task OnHttpRequest(IHttpSocketClient client, HttpContextEventArgs e)
         {
             //头像服务
-            if(e.Context.Request.RelativeURL.StartsWith("/imageservice/avatar/"))
+            if (e.Context.Request.RelativeURL.StartsWith("/imageservice/avatar/"))
             {
                 long uid = long.Parse(e.Context.Request.RelativeURL.Substring("/imageservice/avatar/".Length));
                 e.Context.Response.ContentType = "image/jpeg";
@@ -23,7 +25,16 @@ namespace OpenDanmaki.Server
                 await e.Context.Response.AnswerAsync();
                 return;
             }
-
+            //预抓取文件
+            if (e.Context.Request.RelativeURL.StartsWith("/attachments/"))
+            {
+                int id = int.Parse(e.Context.Request.RelativeURL.Substring("/attachments/".Length));
+                var item = OpenDanmaki.instance.TmpResourceProvider.GetCachedItem(id);
+                e.Context.Response.ContentType = item.XMineType;
+                e.Context.Response.SetContent(item.Data);
+                await e.Context.Response.AnswerAsync();
+                return;
+            }
             //静态文件
             {
                 string fpath1 = Path.Combine("./visual_assets", e.Context.Request.RelativeURL.Substring(1));

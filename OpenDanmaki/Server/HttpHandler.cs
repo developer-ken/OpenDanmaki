@@ -19,11 +19,17 @@ namespace OpenDanmaki.Server
             //头像服务
             if (e.Context.Request.RelativeURL.StartsWith("/imageservice/avatar/"))
             {
-                long uid = long.Parse(e.Context.Request.RelativeURL.Substring("/imageservice/avatar/".Length));
-                e.Context.Response.ContentType = "image/jpeg";
-                e.Context.Response.SetContent(avatar.GetAvatar(uid));
-                await e.Context.Response.AnswerAsync();
-                return;
+                try
+                {
+                    long uid = long.Parse(e.Context.Request.RelativeURL.Substring("/imageservice/avatar/".Length));
+                    e.Context.Response.ContentType = "image/jpeg";
+                    e.Context.Response.SetContent(avatar.GetAvatar(uid));
+                    await e.Context.Response.AnswerAsync();
+                    return;
+                }catch(Exception ex)
+                {
+                    log.Error("Failed serving avatar!",ex);
+                }
             }
             //预抓取文件
             if (e.Context.Request.RelativeURL.StartsWith("/attachments/"))

@@ -46,8 +46,15 @@ namespace OpenDanmaki.Server
                 {
                     if (!AvatarCache.ContainsKey(uid))
                     {
-                        AvatarCache.Add(uid, Download(uri).Result);
-                        log.Debug("Preheated avatar for " + uid);
+                        try
+                        {
+                            AvatarCache.Add(uid, Download(uri).Result);
+                            log.Debug("Preheated avatar for " + uid);
+                        }
+                        catch (Exception err)
+                        {
+                            log.Error("Error preheating avatar for " + uid, err);
+                        }
                     }
                 }
             });
@@ -64,6 +71,10 @@ namespace OpenDanmaki.Server
 
         public static async Task<byte[]> Download(string url, string reference = "https://www.bilibili.com/")
         {
+            if (url is null)
+            {
+                throw new Exception("Downloading from a null url!");
+            }
             log.Debug("Downloading data from  " + url);
             byte[] result;
 

@@ -68,7 +68,11 @@ namespace OpenDanmaki
             BiliDanmaku.CommentReceived += BiliDanmaku_CommentReceived;
             BiliDanmaku.Superchat += BiliDanmaku_Superchat;
             BiliDanmaku.Gift += BiliDanmaku_Gift;
+            BiliDanmaku.GuardBuy += BiliDanmaku_GuardBuy;
         }
+        
+
+        public OpenDanmaki(Config config) : this(config.TargetRoomId, config.BiliCookie, config.LocalHostname, config.LocalPort) { }
 
         private void BiliDanmaku_DanmakuMsgReceivedEvent(object sender, DanmakuReceivedEventArgs e)
         {
@@ -101,6 +105,19 @@ namespace OpenDanmaki
             }
             logger.Debug(e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [superchat]" + e.Danmaku.CommentText);
             WSMPush.PushStdMessageAsync(args.DanmakuObj, e.Danmaku.SCKeepTime, args.BandageImgUrls);
+        }
+
+        private void BiliDanmaku_GuardBuy(object sender, DanmakuReceivedEventArgs e)
+        {
+            var args = new DanmakuEventArgs(e.Danmaku);
+            GiftPreprocess?.Invoke(args);
+            if (args.Drop)
+            {
+                logger.Debug("[DROP]" + e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [crew] Type" + e.Danmaku.UserGuardLevel + " x" + e.Danmaku.GiftCount);
+                return;
+            }
+            logger.Debug(e.Danmaku.UserName + "#" + e.Danmaku.UserID + ": [crew] Type" + e.Danmaku.UserGuardLevel + " x" + e.Danmaku.GiftCount);
+            WSMPush.PushCrewAsync(args.DanmakuObj, args.BandageImgUrls);
         }
 
         private void BiliDanmaku_CommentReceived(object sender, BiliveDanmakuAgent.Model.DanmakuReceivedEventArgs e)

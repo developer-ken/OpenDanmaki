@@ -47,7 +47,7 @@ namespace OpenDanmaki.Server
                 base_obj.Add("type", "normal");
             }
             base_obj.Add("name", danmaku.UserName);
-            base_obj.Add("content", HandleEmoji(danmaku.CommentText));
+            base_obj.Add("content", HandleEmoji(danmaku));
             base_obj.Add("avatar", "http://" + Server.Host + ":" + Server.Port + "/imageservice/avatar/" + danmaku.UserID);
             base_obj.Add("priority", priority);
             base_obj.Add("guard_level", danmaku.UserGuardLevel);
@@ -119,6 +119,43 @@ namespace OpenDanmaki.Server
             await PushJsonToClientAsync(base_obj);
         }
 
+        public async Task PushCrewAsync(Danmaku danmaku, List<string> tags = null)
+        {
+            JObject base_obj = new JObject();
+            base_obj.Add("type", "crew");
+            base_obj.Add("name", danmaku.UserName);
+            base_obj.Add("avatar", "http://" + Server.Host + ":" + Server.Port + "/imageservice/avatar/" + danmaku.UserID);
+            base_obj.Add("ctype", danmaku.UserGuardLevel);
+            base_obj.Add("len", danmaku.GiftCount);
+
+            if (tags is null || tags.Count() == 0)
+            {
+                base_obj.Add("tags", null);
+            }
+            else
+            {
+                JArray jarr = new JArray();
+                foreach (var item in tags)
+                {
+                    jarr.Add(item);
+                }
+                base_obj.Add("tags", jarr);
+            }
+
+            {
+                JObject medal = new JObject();
+                if (danmaku.UserMedal != null)
+                {
+                    medal.Add("title", danmaku.UserMedal.Name);
+                    medal.Add("level", danmaku.UserMedal.Level);
+                    medal.Add("tuid", danmaku.UserMedal.TargetId);
+                    medal.Add("tname", danmaku.UserMedal.TargetName);
+                }
+                base_obj.Add("medal", medal);
+            }
+            await PushJsonToClientAsync(base_obj);
+        }
+
         public async Task PushJsonToClientAsync(JObject json)
         {
             var arg = new RawJsonEventArgs(json);
@@ -137,7 +174,7 @@ namespace OpenDanmaki.Server
                     cntsent++;
                 }
             }
-            if(cntsent == 0)
+            if (cntsent == 0)
             {
                 log.Warn("No client connected! Message dropped.");
                 log.Warn("Check client connection.");
@@ -145,13 +182,32 @@ namespace OpenDanmaki.Server
             }
         }
 
-        public string HandleEmoji(string text)
+        public string HandleEmoji(Danmaku dmk)
         {
-            var matches = Regex.Matches(text, @"\[(.+)\]");
+            string text = dmk.CommentText;
+            try
+            {
+                var dataurl = dmk.RawObject?["info"]?[0]?[13]?["url"]?.ToString();
+                if (dataurl is not null)
+                {
+                    var emotename = dmk.RawObject?["info"]?[0]?[13]?["emoticon_unique"]?.ToString();
+                    emotename = emotename.Replace("[", "").Replace("]", "");
+                    if (!File.Exists("./visual_assets/emoji/" + emotename + ".png"))
+                    {
+                        log.Debug("Preheating new emoji: " + emotename);
+                        var bytes = AvatarProvider.Download(dataurl).Result;
+                        File.WriteAllBytes("./visual_assets/emoji/" + emotename + ".png", bytes);
+                    }
+                    text = "[img:/emoji/" + emotename + ".png]";
+                    return text;
+                }
+            }
+            catch { }
+            var matches = Regex.Matches(text, @"\[([A-Za-z0-9\u4e00-\u9fa5\-_]+)\]");
             foreach (Match item in matches)
             {
                 if (File.Exists("./visual_assets/emoji/" + item.Groups[1].Value + ".png"))
-                    text = text.Replace(item.Value, "[img:/emoji/" + item.Groups[1].Value + ".png]");
+                    text = text.Replace(item.Value, "[emoj:/emoji/" + item.Groups[1].Value + ".png]");
             }
             return text;
         }

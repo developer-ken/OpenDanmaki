@@ -1,22 +1,111 @@
 ﻿using log4net;
 using log4net.Config;
-using BiliveDanmakuAgent;
-using OpenDanmaki.Server;
-
+using QRCoder;
+using System.Net;
 
 namespace OpenDanmaki.Cli
 {
     internal class Program
     {
-        const string bilicookie = "buvid3=2E1148AD-ABC6-E0CF-37A7-9C82FC51C4FA40742infoc; i-wanna-go-back=-1; _uuid=A5D1A192-D104D-E15F-F335-7BF278949EA540928infoc; FEED_LIVE_VERSION=V8; rpdid=|(m)mk~u~u|0J'uY))JYukuk; header_theme_version=CLOSE; LIVE_BUVID=AUTO9216888353863270; buvid_fp_plain=undefined; b_ut=5; hit-new-style-dyn=1; hit-dyn-v2=1; dy_spec_agreed=1; b_nut=1695029494; buvid4=436331F3-85BC-E5CA-A9C4-1674DAEB99AF94655-023091817-ZJxtsW9ohCNsHMCIIXWPtA%3D%3D; enable_web_push=DISABLE; DedeUserID=23696210; DedeUserID__ckMd5=51fcc7bc4203c25e; fingerprint=b3ee44306f3c1f7a9f57b2d50851e9b2; CURRENT_FNVAL=4048; CURRENT_QUALITY=116; bp_article_offset_23696210=883478367681118213; SESSDATA=4135581f%2C1721318532%2C3f408%2A11CjDrLPC-7pETXG3gEWzMymgBt3EC_2o-zCtLi3iEOp1oqyAuM2FOlbactQY26x07QkgSVnpMUmttbnYxWl9OY2twR1J1VmRXcVktODVRbks5ZUZNRk82RXM3dGZycUFzZWxxdEM0bXBLbXkxc2ZkWjlSMXUzVnB6REUwT0RicTNWeDVDNXpZM1VBIIEC; bili_jct=9ef682ba0fd8006257acab9a9f8e18a1; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDYyNTQxMDgsImlhdCI6MTcwNTk5NDg0OCwicGx0IjotMX0.6gqyh-A_fHyj9WVJd-WqC53f3oP410LgGVWCNYriwf0; bili_ticket_expires=1706254048; bsource=search_bing; b_lsid=45AD4DE4_18D358B5468; sid=8qz9qt66; home_feed_column=5; buvid_fp=b3ee44306f3c1f7a9f57b2d50851e9b2; bp_video_offset_23696210=889761814671261747; browser_resolution=1475-958; PVID=16";
+        private static readonly ILog log = LogManager.GetLogger(typeof(Program));
         static void Main(string[] args)
         {
-            OpenDanmaki od = new OpenDanmaki(404538, bilicookie);
-            od.StartAsync().Wait();
             Console.WriteLine("OpenDanmaki - Alpha test version");
-            Console.WriteLine("内部测试版本已装载");
+            Console.WriteLine("Loading logger: log4net");
+            if (File.Exists("log4net.config"))
+            {
+                XmlConfigurator.Configure(new System.IO.FileInfo("log4net.config"));
+            }
+            else
+            {
+                BasicConfigurator.Configure();
+                log.Warn("Config file for log4net not exists, default logger loaded.");
+            }
+            log.Info("Logger loaded.");
+
+            Config config;
+            BiliApi.BiliSession bsession;
+            BiliApi.Auth.QRLogin qr;
+
+            if (File.Exists("config.json"))
+            {
+                config = new Config(File.ReadAllText("config.json"));
+                log.Info("读取到配置文件，自动登录...");
+                qr = new BiliApi.Auth.QRLogin(config.BiliCookie);
+                if (!qr.LoggedIn)
+                {
+                    log.Info("正在连接B站认证服务...");
+                    qr = new BiliApi.Auth.QRLogin();
+                    {
+                        QRCodeGenerator qrGenerator = new QRCodeGenerator();
+                        QRCodeData qrCodeData = qrGenerator.CreateQrCode(new PayloadGenerator.Url(qr.QRToken.ScanUrl), QRCodeGenerator.ECCLevel.M);
+                        AsciiQRCode qrCode = new AsciiQRCode(qrCodeData);
+                        Console.WriteLine(qrCode.GetGraphic(1));
+                    }
+                    log.Info("扫描上面的二维码，登录您的B站账号。");
+                    qr.Login();
+                    log.Info("登录成功");
+                }
+                else
+                {
+                    log.Info("登录成功");
+                }
+                bsession = new BiliApi.BiliSession(qr.Cookies);
+                config.BiliCookie = SerializeCookie(qr.Cookies);
+            }
+            else
+            {
+                try
+                {
+                    config = new Config()
+                    {
+                        LocalHostname = "localhost",
+                        LocalPort = 9753
+                    };
+                    log.Info("第一次使用 - 快速设置");
+                    log.Info("正在连接B站认证服务...");
+                    qr = new BiliApi.Auth.QRLogin();
+                    {
+                        QRCodeGenerator qrGenerator = new QRCodeGenerator();
+                        QRCodeData qrCodeData = qrGenerator.CreateQrCode(new PayloadGenerator.Url(qr.QRToken.ScanUrl), QRCodeGenerator.ECCLevel.M);
+                        AsciiQRCode qrCode = new AsciiQRCode(qrCodeData);
+                        Console.WriteLine(qrCode.GetGraphic(1));
+                    }
+                    log.Info("扫描上面的二维码，登录您的B站账号。");
+                    var cookie = qr.Login();
+                    log.Info("登录成功");
+                    bsession = new BiliApi.BiliSession(cookie);
+                    config.BiliCookie = SerializeCookie(cookie);
+                    log.Info("要绑定到哪个直播间？输入直播间号。");
+                    config.TargetRoomId = int.Parse(Console.ReadLine());
+                }
+                catch (Exception ex)
+                {
+                    log.Error("快速设置失败", ex);
+                    log.Info("重启软件再次设置，或联系你的技术支持。");
+                    return;
+                }
+            }
+            OpenDanmaki od = new OpenDanmaki(config);
+            od.StartAsync().Wait();
+            config.BiliCookie = qr.Serilize();
+            File.WriteAllText("config.json", config.Serilize());
+            Console.BackgroundColor = ConsoleColor.White;
+            Console.ForegroundColor = ConsoleColor.Black;
             Console.WriteLine("http://" + od.Server.Host + ":" + od.Server.Port + "/kboard.html");
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.ForegroundColor = ConsoleColor.White;
             while (true) Thread.Sleep(1000);
+        }
+
+        public static string SerializeCookie(CookieCollection cookies)
+        {
+            List<string> cookieList = new List<string>();
+            foreach (Cookie cookie in cookies)
+            {
+                cookieList.Add(cookie.Name + "=" + cookie.Value + ";");
+            }
+            return string.Join(" ", cookieList);
         }
     }
 }

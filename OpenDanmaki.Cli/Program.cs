@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using BiliApi;
+using log4net;
 using log4net.Config;
 using QRCoder;
 using System.Net;
@@ -76,8 +77,17 @@ namespace OpenDanmaki.Cli
                     log.Info("登录成功");
                     bsession = new BiliApi.BiliSession(cookie);
                     config.BiliCookie = SerializeCookie(cookie);
-                    log.Info("要绑定到哪个直播间？输入直播间号。");
-                    config.TargetRoomId = int.Parse(Console.ReadLine());
+                    var userinfo = bsession.getCurrentUserData();
+                    if (userinfo.liveroomid <= 0)
+                    {
+                        log.Info("要绑定到哪个直播间？输入直播间号。");
+                        config.TargetRoomId = int.Parse(Console.ReadLine());
+                    }
+                    else
+                    {
+                        log.Info("将绑定到您的直播间："+userinfo.liveroomid);
+                        config.TargetRoomId = userinfo.liveroomid;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -90,12 +100,21 @@ namespace OpenDanmaki.Cli
             od.StartAsync().Wait();
             config.BiliCookie = qr.Serilize();
             File.WriteAllText("config.json", config.Serilize());
-            Console.BackgroundColor = ConsoleColor.White;
-            Console.ForegroundColor = ConsoleColor.Black;
-            Console.WriteLine("http://" + od.Server.Host + ":" + od.Server.Port + "/kboard.html");
-            Console.BackgroundColor = ConsoleColor.Black;
-            Console.ForegroundColor = ConsoleColor.White;
-            while (true) Thread.Sleep(1000);
+            if (!File.Exists("./visual_assets/kboard/kboard.html"))
+            {
+                log.Warn("前端没有提供kboard.html文件");
+            }
+            else
+            {
+                Console.WriteLine("使用直播软件捕获以下地址：");
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.Write("http://" + od.Server.Host + ":" + od.Server.Port + "/kboard.html");
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine();
+            }
+            while (true) Thread.Sleep(10000);
         }
 
         public static string SerializeCookie(CookieCollection cookies)

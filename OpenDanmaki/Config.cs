@@ -13,6 +13,8 @@ namespace OpenDanmaki
         public string BiliCookie { get; set; }
         public string LocalHostname { get; set; }
         public int LocalPort { get; set; }
+
+        public bool CacheAvatar { get; set; } = true;
         
         public Config()
         {
@@ -26,15 +28,19 @@ namespace OpenDanmaki
             BiliCookie = j.Value<string>("BiliCookie");
             LocalHostname = j.Value<string>("LocalHostname");
             LocalPort = j.Value<int>("LocalPort");
+            CacheAvatar = j["CacheAvatar"]?.Value<bool>() ?? true;
         }
 
         public string Serilize()
         {
-            JObject j = new JObject();
-            j.Add("TargetRoomId", TargetRoomId);
-            j.Add("BiliCookie", BiliCookie);
-            j.Add("LocalHostname", LocalHostname);
-            j.Add("LocalPort", LocalPort);
+            JObject j = new JObject
+            {
+                { "TargetRoomId", TargetRoomId },
+                { "BiliCookie", BiliCookie },
+                { "LocalHostname", LocalHostname },
+                { "LocalPort", LocalPort },
+                { "CacheAvatar", CacheAvatar }
+            };
             return j.ToString();
         }
     }

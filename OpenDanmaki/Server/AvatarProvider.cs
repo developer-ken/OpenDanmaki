@@ -23,7 +23,9 @@ namespace OpenDanmaki.Server
             {
                 if (AvatarCache.ContainsKey(uid))
                 {
-                    return AvatarCache[uid];
+                    var cache = AvatarCache[uid];
+                    if(!OpenDanmaki.Config.CacheAvatar) AvatarCache.Remove(uid);
+                    return cache;
                 }
                 else
                 {
@@ -62,11 +64,14 @@ namespace OpenDanmaki.Server
 
         private object Lock(long uid)
         {
-            if (!AvatarLock.ContainsKey(uid))
+            lock (AvatarLock)
             {
-                AvatarLock.Add(uid, new object());
+                if (!AvatarLock.ContainsKey(uid))
+                {
+                    AvatarLock.Add(uid, new object());
+                }
+                return AvatarLock[uid];
             }
-            return AvatarLock[uid];
         }
 
         public static async Task<byte[]> Download(string url, string reference = "https://www.bilibili.com/")

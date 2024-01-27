@@ -73,7 +73,7 @@
             }
         }
 
-        .chat-message img {
+        .avatar {
             width: 50px;
             height: 50px;
             border-radius: 50%;
@@ -136,6 +136,7 @@
             message.className = 'chat-message';
 
             var img = document.createElement('img');
+            img.classList.add('avatar');
             img.src = avatar; // Replace with actual avatar URL
 
             var bubble = document.createElement('div');
@@ -159,8 +160,10 @@
 
             var text = document.createElement('div');
 
-            text.innerHTML = messagetxt.toString().replace(/\[img:(.*?)\]/g, function (match, url) {
-                return '<img src="' + url + '" style="width: 1.5em; height: 1.5em;">';
+            text.innerHTML = messagetxt.toString().replace(/\[emoj:(.*?)\]/g, function (match, url) {
+                return '<img src="' + url + '" style="height: 1.5em;">';
+            }).replace(/\[img:(.*?)\]/g, function (match, url) {
+                return '<img src="' + url + '" style="height: 45px;">';
             }); // Replace [url] with img element
 
             bubble.appendChild(name);
@@ -187,8 +190,7 @@
                         clearTimeout(pinnedMessageTimeout);
                         clearInterval(pinnedMessageInterval);
                         chatContainer.removeEventListener('scroll', pinnedMessageListener);
-                        pinnedMessage.element.style.position = '';
-                        pinnedMessage.element.remove();
+                        pinnedchatContainer.innerHTML = "";
                     }
 
                     // Pin the new message
@@ -214,13 +216,13 @@
             chatContainer.addEventListener('scroll', listener);
         }
 
-        // window.setInterval(function () {
-        //     var pri = Math.random() * 100;
-        //     addPinnedMessage('Name', "表情[img:https://g.csdnimg.cn/static/face/emoji/010.png]测试 优先级" + pri, 'https://i2.hdslb.com/bfs/face/8e80dfc2cc59b1d3d6c48895666aa28b9dd323ae.jpg@150w_150h.jpg', ["Saab"], pri);
-        // }, 500)
-        // window.setInterval(function () {
-        //     addMessage('Name', "表情[img:https://g.csdnimg.cn/static/face/emoji/010.png]测试" + Math.random(), 'https://i2.hdslb.com/bfs/face/8e80dfc2cc59b1d3d6c48895666aa28b9dd323ae.jpg@150w_150h.jpg', ["Saab"]);
-        // }, 300)
+        //window.setInterval(function () {
+        //    var pri = Math.random() * 100;
+        //    addPinnedMessage('Name', "表情[img:https://g.csdnimg.cn/static/face/emoji/010.png]测试 优先级" + pri, 'https://i2.hdslb.com/bfs/face/8e80dfc2cc59b1d3d6c48895666aa28b9dd323ae.jpg@150w_150h.jpg', ["Saab"], pri);
+        //}, 500)
+        //window.setInterval(function () {
+        //    addMessage('Name', "表情[img:https://g.csdnimg.cn/static/face/emoji/010.png]测试" + Math.random(), 'https://i2.hdslb.com/bfs/face/8e80dfc2cc59b1d3d6c48895666aa28b9dd323ae.jpg@150w_150h.jpg', ["Saab"]);
+        //}, 300)
     </script>
 
     <script>
@@ -238,6 +240,24 @@
                         break;
                     case 'pinned':
                         addPinnedMessage(message.name, message.content, message.avatar, message.tags, message.priority);
+                        break;
+                    case 'gift':
+                        addMessage(message.name, "送出 [emoj:" + message.img_url + "]<u>" + message.gift_name + "</u> x" + message.gift_count, message.avatar, message.tags);
+                        break;
+                    case 'crew':
+                        var typename = "未知";
+                        switch (message.ctype) {
+                            case 1:
+                                typename = "总督";
+                                break;
+                            case 2:
+                                typename = "提督";
+                                break;
+                            case 3:
+                                typename = "舰长";
+                                break;
+                        }
+                        addPinnedMessage(message.name, "充值 <u>" + typename + "</u> x" + message.gift_count + "月", message.avatar, message.tags, (4 - message.ctype) * 10);
                         break;
                 }
             };

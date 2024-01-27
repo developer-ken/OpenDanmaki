@@ -22,6 +22,8 @@ namespace OpenDanmaki
         public DanmakuApi BiliDanmaku;
         public PluginLoader Pluginloader;
         public TmpResourceProvider TmpResourceProvider;
+        public GiftResourcesProvider GiftResourcesProvider;
+        public static Config Config { get; set; }
 
         /// <summary>
         /// 在弹幕事件(包含sc、礼物等)接收后、被处理前触发
@@ -64,15 +66,19 @@ namespace OpenDanmaki
             BiliDanmaku = new DanmakuApi(liveroomid, logincookie);
             Pluginloader = new PluginLoader(this);
             TmpResourceProvider = new TmpResourceProvider("http://" + host + ":" + port + "/attachments/");
+            GiftResourcesProvider = new GiftResourcesProvider("http://" + host + ":" + port + "/");
             BiliDanmaku.DanmakuMsgReceivedEvent += BiliDanmaku_DanmakuMsgReceivedEvent;
             BiliDanmaku.CommentReceived += BiliDanmaku_CommentReceived;
             BiliDanmaku.Superchat += BiliDanmaku_Superchat;
             BiliDanmaku.Gift += BiliDanmaku_Gift;
             BiliDanmaku.GuardBuy += BiliDanmaku_GuardBuy;
         }
-        
 
-        public OpenDanmaki(Config config) : this(config.TargetRoomId, config.BiliCookie, config.LocalHostname, config.LocalPort) { }
+
+        public OpenDanmaki(Config config) : this(config.TargetRoomId, config.BiliCookie, config.LocalHostname, config.LocalPort)
+        {
+            Config = config;
+        }
 
         private void BiliDanmaku_DanmakuMsgReceivedEvent(object sender, DanmakuReceivedEventArgs e)
         {
@@ -135,12 +141,17 @@ namespace OpenDanmaki
 
         public async Task StartAsync()
         {
+            Directory.CreateDirectory("./plugins");
+            Directory.CreateDirectory("./visual_assets/emoji");
+            Directory.CreateDirectory("./visual_assets/gifts");
             await Server.StartAsync();
             await BiliDanmaku.ConnectAsync();
             var ver = Assembly.GetExecutingAssembly().GetName().Version;
+            logger.Debug("OpenDanmaki is preloading gift resources list...");
+            var cnt = GiftResourcesProvider.LoadGiftResourcesList(Config);
+            logger.Debug("Loaded " + cnt + " gift resource url.");
             logger.Info("OpenDanmaki " + ver.ToString() + " loaded.");
             logger.Info("Start loading plugins...");
-            Directory.CreateDirectory("plugins");
             Directory.GetFiles("plugins").ToList().ForEach(x =>
             {
                 if (x.ToLower().EndsWith(".odp.dll"))

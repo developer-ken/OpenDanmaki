@@ -90,6 +90,9 @@ namespace OpenDanmaki.Server
             base_obj.Add("gift_count", danmaku.GiftCount);
             base_obj.Add("gift_cost", danmaku.Price);
             base_obj.Add("gift_is_gold", danmaku.GiftGoldcoin);
+            if (danmaku.GiftId is not null)
+                base_obj.Add("img_url", 
+                    OpenDanmaki.instance.GiftResourcesProvider.GetGiftPicture((int)danmaku.GiftId));
 
             if (tags is null || tags.Count() == 0)
             {

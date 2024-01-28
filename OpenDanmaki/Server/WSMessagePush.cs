@@ -47,6 +47,7 @@ namespace OpenDanmaki.Server
                 base_obj.Add("type", "normal");
             }
             base_obj.Add("name", danmaku.UserName);
+            base_obj.Add("uid", danmaku.UserID);
             base_obj.Add("content", HandleEmoji(danmaku));
             base_obj.Add("avatar", "http://" + Server.Host + ":" + Server.Port + "/imageservice/avatar/" + danmaku.UserID);
             base_obj.Add("priority", priority);
@@ -85,13 +86,14 @@ namespace OpenDanmaki.Server
             JObject base_obj = new JObject();
             base_obj.Add("type", "gift");
             base_obj.Add("name", danmaku.UserName);
+            base_obj.Add("uid", danmaku.UserID);
             base_obj.Add("avatar", "http://" + Server.Host + ":" + Server.Port + "/imageservice/avatar/" + danmaku.UserID);
             base_obj.Add("gift_name", danmaku.GiftName);
             base_obj.Add("gift_count", danmaku.GiftCount);
             base_obj.Add("gift_cost", danmaku.Price);
             base_obj.Add("gift_is_gold", danmaku.GiftGoldcoin);
             if (danmaku.GiftId is not null)
-                base_obj.Add("img_url", 
+                base_obj.Add("img_url",
                     OpenDanmaki.instance.GiftResourcesProvider.GetGiftPicture((int)danmaku.GiftId));
 
             if (tags is null || tags.Count() == 0)
@@ -127,6 +129,7 @@ namespace OpenDanmaki.Server
             JObject base_obj = new JObject();
             base_obj.Add("type", "crew");
             base_obj.Add("name", danmaku.UserName);
+            base_obj.Add("uid", danmaku.UserID);
             base_obj.Add("avatar", "http://" + Server.Host + ":" + Server.Port + "/imageservice/avatar/" + danmaku.UserID);
             base_obj.Add("ctype", danmaku.UserGuardLevel);
             base_obj.Add("len", danmaku.GiftCount);

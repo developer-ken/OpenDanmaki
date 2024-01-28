@@ -1,4 +1,4 @@
-# 前端人员开发手册
+# 前端开发人员手册
 ## <span id="t1">基础架构和约定</span>
 
 - 前端文件根目录为`./visual_assets/kboard`。  

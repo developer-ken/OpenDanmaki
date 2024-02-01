@@ -1,4 +1,5 @@
-﻿using BiliveDanmakuAgent;
+﻿using BiliApi;
+using BiliveDanmakuAgent;
 using BiliveDanmakuAgent.Model;
 using log4net;
 using log4net.Repository.Hierarchy;
@@ -23,7 +24,9 @@ namespace OpenDanmaki
         public PluginLoader Pluginloader;
         public TmpResourceProvider TmpResourceProvider;
         public GiftResourcesProvider GiftResourcesProvider;
-        public static Config Config { get; set; }
+        public BiliSession BiliApiSession;
+
+        public Config Config { get; set; }
 
         /// <summary>
         /// 在弹幕事件(包含sc、礼物等)接收后、被处理前触发
@@ -74,6 +77,22 @@ namespace OpenDanmaki
             BiliDanmaku.GuardBuy += BiliDanmaku_GuardBuy;
         }
 
+        public OpenDanmaki(int liveroomid, BiliSession bsession, string host = "localhost", int port = 9753)
+        {
+            instance = this;
+            BiliApiSession = bsession;
+            Server = new ResourcesServer(host, port);
+            WSMPush = new WSMessagePush(Server);
+            BiliDanmaku = new DanmakuApi(liveroomid, bsession.GetCookieString());
+            Pluginloader = new PluginLoader(this);
+            TmpResourceProvider = new TmpResourceProvider("http://" + host + ":" + port + "/attachments/");
+            GiftResourcesProvider = new GiftResourcesProvider("http://" + host + ":" + port + "/");
+            BiliDanmaku.DanmakuMsgReceivedEvent += BiliDanmaku_DanmakuMsgReceivedEvent;
+            BiliDanmaku.CommentReceived += BiliDanmaku_CommentReceived;
+            BiliDanmaku.Superchat += BiliDanmaku_Superchat;
+            BiliDanmaku.Gift += BiliDanmaku_Gift;
+            BiliDanmaku.GuardBuy += BiliDanmaku_GuardBuy;
+        }
 
         public OpenDanmaki(Config config) : this(config.TargetRoomId, config.BiliCookie, config.LocalHostname, config.LocalPort)
         {

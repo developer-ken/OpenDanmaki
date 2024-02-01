@@ -96,7 +96,10 @@ namespace OpenDanmaki.Cli
                     return;
                 }
             }
-            OpenDanmaki od = new OpenDanmaki(config);
+            OpenDanmaki od = new OpenDanmaki(config)
+            {
+                BiliApiSession = bsession
+            };
             od.StartAsync().Wait();
             config.BiliCookie = qr.Serilize();
             File.WriteAllText("config.json", config.Serilize());

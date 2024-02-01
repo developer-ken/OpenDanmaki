@@ -24,7 +24,7 @@ namespace OpenDanmaki.Model
             get
             {
                 if (handled) throw new InvalidOperationException("This event has been handled!");
-                return Request;
+                return request;
             }
         }
 

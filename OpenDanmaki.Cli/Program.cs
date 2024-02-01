@@ -98,7 +98,8 @@ namespace OpenDanmaki.Cli
             }
             OpenDanmaki od = new OpenDanmaki(config)
             {
-                BiliApiSession = bsession
+                BiliApiSession = bsession,
+                Liveroom = new BiliLiveRoom(config.TargetRoomId, bsession)
             };
             od.StartAsync().Wait();
             config.BiliCookie = qr.Serilize();

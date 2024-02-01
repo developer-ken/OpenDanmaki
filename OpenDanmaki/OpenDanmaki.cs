@@ -25,6 +25,7 @@ namespace OpenDanmaki
         public TmpResourceProvider TmpResourceProvider;
         public GiftResourcesProvider GiftResourcesProvider;
         public BiliSession BiliApiSession;
+        public BiliLiveRoom Liveroom;
 
         public Config Config { get; set; }
 

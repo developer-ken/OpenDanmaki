@@ -24,7 +24,6 @@ namespace OpenDanmaki.Server
                 if (AvatarCache.ContainsKey(uid))
                 {
                     var cache = AvatarCache[uid];
-                    if(!OpenDanmaki.Config.CacheAvatar) AvatarCache.Remove(uid);
                     return cache;
                 }
                 else

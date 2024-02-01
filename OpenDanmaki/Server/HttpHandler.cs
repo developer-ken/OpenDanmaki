@@ -1,4 +1,5 @@
 ﻿using log4net;
+using OpenDanmaki.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,8 +15,15 @@ namespace OpenDanmaki.Server
     {
         private static readonly log4net.ILog log = LogManager.GetLogger(typeof(HttpHandler));
         public static AvatarProvider avatar = new AvatarProvider();
+
+        public static event Action<HttpRequestEventArgs> HandleRequest;
+
         public async Task OnHttpRequest(IHttpSocketClient client, HttpContextEventArgs e)
         {
+            HttpRequestEventArgs hrea = new HttpRequestEventArgs(e);
+            HandleRequest?.Invoke(hrea);
+            if (hrea.IsHandled) return;
+
             //头像服务
             if (e.Context.Request.RelativeURL.StartsWith("/imageservice/avatar/"))
             {

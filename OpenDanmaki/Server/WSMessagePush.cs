@@ -176,7 +176,7 @@ namespace OpenDanmaki.Server
             {
                 if (item.Protocol == Protocol.WebSocket)//先判断是不是websocket协议
                 {
-                    await item.SendWithWSAsync(json.ToString(Newtonsoft.Json.Formatting.None));
+                    await item.SendWithWSAsync(arg.RawJson.ToString(Newtonsoft.Json.Formatting.None));
                     cntsent++;
                 }
             }

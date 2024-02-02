@@ -132,6 +132,7 @@ namespace OpenDanmaki.Server
             base_obj.Add("uid", danmaku.UserID);
             base_obj.Add("avatar", "http://" + Server.Host + ":" + Server.Port + "/imageservice/avatar/" + danmaku.UserID);
             base_obj.Add("ctype", danmaku.UserGuardLevel);
+            base_obj.Add("gift_count", danmaku.GiftCount);
             base_obj.Add("len", danmaku.GiftCount);
 
             if (tags is null || tags.Count() == 0)

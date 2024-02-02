@@ -34,7 +34,7 @@ namespace OpenDanmaki.Server
         /// <param name="tags">标签</param>
         public async Task PushStdMessageAsync(Danmaku danmaku, int priority = 0, List<string> tags = null)
         {
-            HttpHandler.avatar.AvatarPreheatAsync(danmaku.UserID, danmaku.AvatarUrl).Wait();
+            await HttpHandler.avatar.AvatarPreheatAsync(danmaku.UserID, danmaku.AvatarUrl);
             EmojiProvider.LoadEmojiIfNotExists(danmaku);
 
             JObject base_obj = new JObject();

@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BiliveDanmakuAgent", "Biliv
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PluginDemo.odp", "PluginDemo.odp\PluginDemo.odp.csproj", "{E1195847-8C2A-41B2-AF56-1403470347DA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamerPanel.odp", "StreamerPanel.odp\StreamerPanel.odp.csproj", "{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,14 @@ Global
 		{E1195847-8C2A-41B2-AF56-1403470347DA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1195847-8C2A-41B2-AF56-1403470347DA}.Release|x64.ActiveCfg = Release|Any CPU
 		{E1195847-8C2A-41B2-AF56-1403470347DA}.Release|x64.Build.0 = Release|Any CPU
+		{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}.Debug|x64.Build.0 = Debug|Any CPU
+		{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}.Release|x64.ActiveCfg = Release|Any CPU
+		{21A36AC2-A490-4081-9B69-29BEBB8DEBC9}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

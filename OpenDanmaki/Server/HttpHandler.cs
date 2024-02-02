@@ -30,10 +30,13 @@ namespace OpenDanmaki.Server
                 try
                 {
                     long uid = long.Parse(e.Context.Request.RelativeURL.Substring("/imageservice/avatar/".Length));
-                    e.Context.Response.ContentType = "image/jpeg";
-                    e.Context.Response.SetContent(avatar.GetAvatar(uid));
-                    await e.Context.Response.AnswerAsync();
-                    return;
+                    if (uid != 0)
+                    {
+                        e.Context.Response.ContentType = "image/jpeg";
+                        e.Context.Response.SetContent(avatar.GetAvatar(uid));
+                        await e.Context.Response.AnswerAsync();
+                        return;
+                    }
                 }catch(Exception ex)
                 {
                     log.Error("Failed serving avatar!",ex);
@@ -100,7 +103,7 @@ namespace OpenDanmaki.Server
             }
         }
 
-        public string FillPlaceholders(string text, List<Placeholder> placeholders)
+        public static string FillPlaceholders(string text, List<Placeholder> placeholders)
         {
             foreach(var ph in placeholders)
             {
